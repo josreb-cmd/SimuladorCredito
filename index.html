@@ -32,8 +32,11 @@
     </div>
 
     <button class="sim-btn" onclick="calcular()">Calcular</button>
+    <button class="sim-btn" onclick="gerarPDF()">Gerar PDF</button>
 
-    <div class="sim-resumo" id="resumo"></div>
+    <!-- RESUMO PREMIUM EM 2 LINHAS -->
+    <div class="sim-resumo" id="resumoLinha1"></div>
+    <div class="sim-resumo" id="resumoLinha2"></div>
 
     <p class="sim-nota">
       • A última prestação ajusta cêntimos para fechar o saldo.<br>
@@ -136,6 +139,7 @@
   border-radius: 8px;
   min-width: 220px;
   border-left: 4px solid #1a73e8;
+  flex: 1;
 }
 
 .sim-resumo .valor {
@@ -181,6 +185,51 @@ td:nth-child(2), th:nth-child(2) {
   margin-top: 12px;
 }
 
+/* ---------- PDF FIX ---------- */
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  #simulador, #simulador * {
+    visibility: visible;
+  }
+
+  #simulador {
+    position: static;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sim-container {
+    max-width: 100%;
+    padding: 10px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .sim-table-wrapper {
+    overflow: visible;
+  }
+
+  table {
+    width: 100%;
+    min-width: 0;
+    font-size: 11px;
+  }
+
+  th, td {
+    padding: 4px;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}
+
 /* ---------- MOBILE ---------- */
 @media (max-width: 600px) {
   .sim-container {
@@ -213,6 +262,11 @@ const pmt = (rate, nper, pv) =>
   rate === 0 ? -(pv / nper) :
   -(rate * pv * Math.pow(1 + rate, nper)) / (Math.pow(1 + rate, nper) - 1);
 
+/* PDF */
+function gerarPDF() {
+  window.print();
+}
+
 /* Cálculo */
 function calcular() {
   const capital = parseFloat(document.getElementById("capital").value);
@@ -234,6 +288,8 @@ function calcular() {
   let saldo = capital;
   let totalJuros = 0, totalIS = 0, totalPago = 0;
 
+  let impostoPrimeiraPrestacao = 0;
+
   const tbody = document.querySelector("#tabela tbody");
   tbody.innerHTML = "";
 
@@ -243,6 +299,8 @@ function calcular() {
     let imposto = aplicarIS ? juros * 0.04 : 0;
     let prestacaoTotal = prestacaoBase + imposto;
     let saldoFinal = saldo - amort;
+
+    if (i === 1) impostoPrimeiraPrestacao = imposto;
 
     if (i === prazo) {
       amort = saldo;
@@ -271,33 +329,40 @@ function calcular() {
     saldo = saldoFinal;
   }
 
-  resumo.innerHTML = `
+  /* ---------- RESUMO PREMIUM EM 2 LINHAS ---------- */
+
+  document.getElementById("resumoLinha1").innerHTML = `
     <div class="card">
       <span>Prestação Mensal (sem IS)</span>
       <span class="valor">${fmt(prestacaoBase)} €</span>
     </div>
 
-    ${aplicarIS ? `
     <div class="card">
-      <span>Imposto de Selo médio</span>
-      <span class="valor">${fmt(totalIS / prazo)} €</span>
-    </div>` : ""}
-
-    <div class="card">
-      <span>Total Pago</span>
-      <span class="valor">${fmt(totalPago)} €</span>
+      <span>Imposto Selo primeira Prestação</span>
+      <span class="valor">${fmt(impostoPrimeiraPrestacao)} €</span>
     </div>
 
+    <div class="card">
+      <span>Prestação Total</span>
+      <span class="valor">${fmt(prestacaoBase + impostoPrimeiraPrestacao)} €</span>
+    </div>
+  `;
+
+  document.getElementById("resumoLinha2").innerHTML = `
     <div class="card">
       <span>Total Juros</span>
       <span class="valor">${fmt(totalJuros)} €</span>
     </div>
 
-    ${aplicarIS ? `
     <div class="card">
       <span>Total Imposto de Selo</span>
       <span class="valor">${fmt(totalIS)} €</span>
-    </div>` : ""}
+    </div>
+
+    <div class="card">
+      <span>Total Pago</span>
+      <span class="valor">${fmt(totalPago)} €</span>
+    </div>
   `;
 }
 
