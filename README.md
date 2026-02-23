@@ -1,6 +1,6 @@
 # SimuladorCredito
 Simulador Crédito com Plano Financeiro
-Este projeto é um simulador para calcular o valor da prestação mensal de financiamento Crédito HAbitação ou Crédito Consumo
+Este projeto é um simulador para calcular o valor da prestação mensal de financiamento Crédito Habitação ou Crédito Consumo
 ## Como usar
 1. Abra o ficheiro HTML no seu navegador
 2. Insira o valor principal
