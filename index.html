@@ -178,7 +178,6 @@
 
         <div class="sim-grid">
             <div>
-                <!-- WCAG: Associação explícita entre label e input -->
                 <label for="capital">Capital (€)</label>
                 <input type="number" id="capital" value="360000" step="0.01" min="100" max="10000000" aria-required="true">
             </div>
@@ -205,7 +204,6 @@
             <button type="button" class="sim-btn secondary" onclick="gerarPDF()">Gerar PDF</button>
         </div>
 
-        <!-- WCAG: aria-live="polite" para leitura automática de leitores de ecrã -->
         <div class="sim-resumo" id="resumoLinha1" aria-live="polite"></div>
         <div class="sim-resumo" id="resumoLinha2" aria-live="polite"></div>
 
@@ -253,7 +251,7 @@ const CONFIG = {
 };
 
 /**
- * Formatador oficial de Moeda pt-PT (Intl API)
+ * Formatador oficial de Moeda pt-PT
  */
 const formatter = new Intl.NumberFormat("pt-PT", {
     minimumFractionDigits: 2,
@@ -264,7 +262,6 @@ const fmt = v => isNaN(v) ? "0,00" : formatter.format(v);
 
 /**
  * Arredondamento Bancário (Half-Even / ISO 60559)
- * Garante eliminação de desvios acumulados de cêntimos
  */
 function roundHalfEven(num, decimals = 2) {
     const factor = Math.pow(10, decimals);
@@ -283,7 +280,7 @@ function roundHalfEven(num, decimals = 2) {
 }
 
 /**
- * Adiciona meses evitando overflow de calendário (ex: 31 Jan -> 28 Fev)
+ * Adiciona meses evitando overflow de calendário
  */
 const addMonths = (date, m) => {
     const d = new Date(date.getTime());
@@ -294,7 +291,7 @@ const addMonths = (date, m) => {
 };
 
 /**
- * Função Financeira PMT (Método Francês / Prestação Constante)
+ * Função Financeira PMT (Prestação Constante)
  */
 const pmt = (rate, nper, pv) => {
     if (rate === 0) return -(pv / nper);
@@ -306,7 +303,7 @@ function gerarPDF() {
 }
 
 /**
- * Helper para criação segura de Cards de Resumo (Prevenção XSS)
+ * Helper para criação segura de Cards de Resumo (Anti-XSS)
  */
 function criarCardResumo(titulo, valor, corBorda = null, tooltip = null) {
     const card = document.createElement("div");
@@ -334,10 +331,8 @@ function calcular() {
         const aplicarIS = document.getElementById("is").checked;
         
         const inputData = document.getElementById("dataInicio").value;
-        // Fix de fuso horário UTC: Adiciona T00:00:00 para forçar hora local
         const dataInicio = inputData ? new Date(inputData + "T00:00:00") : new Date();
 
-        // Validação estrita de limites
         if (isNaN(capital) || capital < CONFIG.MIN_CAPITAL || capital > CONFIG.MAX_CAPITAL) {
             alert(`Por favor, insira um montante de Capital válido (entre ${fmt(CONFIG.MIN_CAPITAL)} € e ${fmt(CONFIG.MAX_CAPITAL)} €).`);
             return;
@@ -361,6 +356,7 @@ function calcular() {
         }
 
         const taxaMensal = taxaAnual / 12;
+        // Prestação arredondada para 2 casas decimais conforme standard bancário
         const prestacaoBaseFixa = roundHalfEven(Math.abs(pmt(taxaMensal, prazo, capital)));
 
         let saldo = capital;
@@ -372,15 +368,19 @@ function calcular() {
         const tbody = document.querySelector("#tabela tbody");
         tbody.innerHTML = "";
 
-        // Fragmento em memória para otimização do DOM (1 único Reflow/Repaint)
         const fragment = document.createDocumentFragment();
 
         for (let i = 1; i <= prazo; i++) {
-            const juros = roundHalfEven(saldo * taxaMensal);
-            let amort = (i === prazo) ? roundHalfEven(saldo) : roundHalfEven(prestacaoBaseFixa - juros);
-            let impostoJuros = aplicarIS ? roundHalfEven(juros * CONFIG.TAX_IS_INTEREST) : 0;
+            let juros = roundHalfEven(saldo * taxaMensal);
+            let amort = roundHalfEven(prestacaoBaseFixa - juros);
             
-            let prestacaoMesBase = (i === prazo) ? roundHalfEven(juros + amort) : prestacaoBaseFixa;
+            // Ajuste estrito do último mês para liquidação exata do capital restante
+            if (i === prazo) {
+                amort = roundHalfEven(saldo);
+            }
+
+            let impostoJuros = aplicarIS ? roundHalfEven(juros * CONFIG.TAX_IS_INTEREST) : 0;
+            let prestacaoMesBase = roundHalfEven(juros + amort);
             let prestacaoMesTotal = roundHalfEven(prestacaoMesBase + impostoJuros);
             
             let saldoFinal = (i === prazo) ? 0 : roundHalfEven(saldo - amort);
@@ -432,7 +432,7 @@ function calcular() {
 
         tbody.appendChild(fragment);
 
-        // Atualização de Resumos via DOM Seguro (Anti-XSS)
+        /* ATUALIZAÇÃO DOS CARDS DE RESUMO (Garantia de coerência do MTIC) */
         const r1 = document.getElementById("resumoLinha1");
         const r2 = document.getElementById("resumoLinha2");
         r1.innerHTML = "";
@@ -451,7 +451,7 @@ function calcular() {
     }
 }
 
-// Eventos e inicialização com Debounce
+// Inicialização com Debounce
 document.addEventListener("DOMContentLoaded", () => {
     const inputData = document.getElementById('dataInicio');
     if (inputData && !inputData.value) {
