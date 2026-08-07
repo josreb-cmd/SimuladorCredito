@@ -325,21 +325,25 @@ function criarCardResumo(titulo, valor, corBorda = null, tooltip = null) {
 
 function calcular() {
     try {
-        const capital = parseFloat(document.getElementById("capital").value);
+        const capitalInput = document.getElementById("capital");
+        const prazoInput = document.getElementById("prazo");
+
+        const capital = parseFloat(capitalInput.value);
         const taxaAnual = parseFloat(document.getElementById("taxa").value) / 100;
-        const prazo = parseInt(document.getElementById("prazo").value, 10);
+        const prazo = parseInt(prazoInput.value, 10);
         const aplicarIS = document.getElementById("is").checked;
         
         const inputData = document.getElementById("dataInicio").value;
         const dataInicio = inputData ? new Date(inputData + "T00:00:00") : new Date();
 
+        // Validação silenciosa sem alertas em popup (sem alert)
         if (isNaN(capital) || capital < CONFIG.MIN_CAPITAL || capital > CONFIG.MAX_CAPITAL) {
-            alert(`Por favor, insira um montante de Capital válido (entre ${fmt(CONFIG.MIN_CAPITAL)} € e ${fmt(CONFIG.MAX_CAPITAL)} €).`);
+            capitalInput.reportValidity();
             return;
         }
 
         if (isNaN(prazo) || prazo < CONFIG.MIN_PRAZO || prazo > CONFIG.MAX_PRAZO) {
-            alert(`Por favor, insira um Prazo válido (entre ${CONFIG.MIN_PRAZO} e ${CONFIG.MAX_PRAZO} meses).`);
+            prazoInput.reportValidity();
             return;
         }
 
@@ -356,7 +360,6 @@ function calcular() {
         }
 
         const taxaMensal = taxaAnual / 12;
-        // Prestação arredondada para 2 casas decimais conforme standard bancário
         const prestacaoBaseFixa = roundHalfEven(Math.abs(pmt(taxaMensal, prazo, capital)));
 
         let saldo = capital;
@@ -432,7 +435,7 @@ function calcular() {
 
         tbody.appendChild(fragment);
 
-        /* ATUALIZAÇÃO DOS CARDS DE RESUMO (Garantia de coerência do MTIC) */
+        /* ATUALIZAÇÃO DOS CARDS DE RESUMO */
         const r1 = document.getElementById("resumoLinha1");
         const r2 = document.getElementById("resumoLinha2");
         r1.innerHTML = "";
