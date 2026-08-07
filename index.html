@@ -171,41 +171,43 @@
 </head>
 <body>
 
-<section id="simulador">
+<section id="simulador" role="region" aria-label="Simulador de Crédito">
     <div class="sim-container">
         <h1 class="sim-title">Simulador de Crédito</h1>
         <p class="sim-subtitle">Cálculo de Prestação & Plano de Amortização (TGIS Portugal)</p>
 
         <div class="sim-grid">
             <div>
-                <label>Capital (€)</label>
-                <input type="number" id="capital" value="360000" step="0.01">
+                <!-- WCAG: Associação explícita entre label e input -->
+                <label for="capital">Capital (€)</label>
+                <input type="number" id="capital" value="360000" step="0.01" min="100" max="10000000" aria-required="true">
             </div>
             <div>
-                <label>Taxa Anual Nomimal (%)</label>
-                <input type="number" id="taxa" value="2.55" step="0.0001">
+                <label for="taxa">Taxa Anual Nominal (%)</label>
+                <input type="number" id="taxa" value="2.55" step="0.0001" min="0" max="100" aria-required="true">
             </div>
             <div>
-                <label>Prazo (meses)</label>
-                <input type="number" id="prazo" value="360">
+                <label for="prazo">Prazo (meses)</label>
+                <input type="number" id="prazo" value="360" min="1" max="600" step="1" aria-required="true">
             </div>
             <div>
-                <label>Data de Início</label>
-                <input type="date" id="dataInicio">
+                <label for="dataInicio">Data de Início</label>
+                <input type="date" id="dataInicio" aria-label="Data de Início do Crédito">
             </div>
             <div style="flex-direction: row; align-items: center; gap: 10px; padding-top: 25px;">
-                <input type="checkbox" id="is" checked style="width: 20px; height: 20px;">
+                <input type="checkbox" id="is" checked style="width: 20px; height: 20px;" aria-label="Aplicar Imposto de Selo de Portugal">
                 <label for="is" style="margin: 0;">Aplicar Imposto Selo (Portugal)</label>
             </div>
         </div>
 
         <div class="sim-btn-wrapper">
-            <button class="sim-btn" onclick="calcular()">Calcular</button>
-            <button class="sim-btn secondary" onclick="gerarPDF()">Gerar PDF</button>
+            <button type="button" class="sim-btn" id="btnCalcular" onclick="calcular()">Calcular</button>
+            <button type="button" class="sim-btn secondary" onclick="gerarPDF()">Gerar PDF</button>
         </div>
 
-        <div class="sim-resumo" id="resumoLinha1"></div>
-        <div class="sim-resumo" id="resumoLinha2"></div>
+        <!-- WCAG: aria-live="polite" para leitura automática de leitores de ecrã -->
+        <div class="sim-resumo" id="resumoLinha1" aria-live="polite"></div>
+        <div class="sim-resumo" id="resumoLinha2" aria-live="polite"></div>
 
         <div class="sim-nota">
             • <b>Verba 17.1 (IS Capital):</b> Calculado sobre o montante inicial consoante o prazo (0,08% p/mês, 0,5% ou 0,6%).<br>
@@ -215,18 +217,18 @@
 
         <h2 class="sim-subtitle" style="margin-top:40px; text-align: left; border-bottom: 2px solid #eee; padding-bottom: 10px;">Plano de Amortização</h2>
 
-        <div class="sim-table-wrapper">
+        <div class="sim-table-wrapper" tabindex="0" role="region" aria-label="Tabela do Plano de Amortização">
             <table id="tabela">
                 <thead>
                     <tr>
-                        <th>Período</th>
-                        <th>Data</th>
-                        <th>Saldo Inicial</th>
-                        <th>Juros</th>
-                        <th>Amortização</th>
-                        <th>Imp. Selo</th>
-                        <th>Saldo Final</th>
-                        <th>Prestação Total</th>
+                        <th scope="col">Período</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Saldo Inicial</th>
+                        <th scope="col">Juros</th>
+                        <th scope="col">Amortização</th>
+                        <th scope="col">Imp. Selo</th>
+                        <th scope="col">Saldo Final</th>
+                        <th scope="col">Prestação Total</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -236,19 +238,64 @@
 </section>
 
 <script>
-/* Formatação de Moeda */
-const fmt = v => isNaN(v) ? "0,00" : v.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/**
+ * CONSTANTES LEGAIS E LIMITES FINANCEIROS
+ */
+const CONFIG = {
+    TAX_IS_INTEREST: 0.04,        // Verba 17.2.1 (4% sobre juros)
+    IS_CAPITAL_SHORT: 0.0008,     // Verba 17.1 (< 12 meses)
+    IS_CAPITAL_MEDIUM: 0.0050,    // Verba 17.1 (12 a 59 meses)
+    IS_CAPITAL_LONG: 0.0060,      // Verba 17.1 (>= 60 meses)
+    MIN_CAPITAL: 100,
+    MAX_CAPITAL: 10000000,
+    MIN_PRAZO: 1,
+    MAX_PRAZO: 600
+};
 
-/* Avançar Meses na Data */
+/**
+ * Formatador oficial de Moeda pt-PT (Intl API)
+ */
+const formatter = new Intl.NumberFormat("pt-PT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
+
+const fmt = v => isNaN(v) ? "0,00" : formatter.format(v);
+
+/**
+ * Arredondamento Bancário (Half-Even / ISO 60559)
+ * Garante eliminação de desvios acumulados de cêntimos
+ */
+function roundHalfEven(num, decimals = 2) {
+    const factor = Math.pow(10, decimals);
+    const n = +(num * factor).toFixed(8);
+    const i = Math.floor(n);
+    const f = n - i;
+    const e = 1e-8;
+    
+    let r;
+    if (Math.abs(f - 0.5) < e) {
+        r = (i % 2 === 0) ? i : i + 1;
+    } else {
+        r = Math.round(n);
+    }
+    return r / factor;
+}
+
+/**
+ * Adiciona meses evitando overflow de calendário (ex: 31 Jan -> 28 Fev)
+ */
 const addMonths = (date, m) => {
-    const d = new Date(date);
+    const d = new Date(date.getTime());
     const day = d.getDate();
     d.setMonth(d.getMonth() + m);
     if (d.getDate() < day) d.setDate(0);
     return d;
 };
 
-/* Função Financeira PMT */
+/**
+ * Função Financeira PMT (Método Francês / Prestação Constante)
+ */
 const pmt = (rate, nper, pv) => {
     if (rate === 0) return -(pv / nper);
     return -(rate * pv * Math.pow(1 + rate, nper)) / (Math.pow(1 + rate, nper) - 1);
@@ -258,119 +305,174 @@ function gerarPDF() {
     window.print();
 }
 
-function calcular() {
-    const capital = parseFloat(document.getElementById("capital").value);
-    const taxaAnual = parseFloat(document.getElementById("taxa").value) / 100;
-    const prazo = parseInt(document.getElementById("prazo").value);
-    const aplicarIS = document.getElementById("is").checked;
-    
-    const inputData = document.getElementById("dataInicio").value;
-    const dataInicio = inputData ? new Date(inputData) : new Date();
+/**
+ * Helper para criação segura de Cards de Resumo (Prevenção XSS)
+ */
+function criarCardResumo(titulo, valor, corBorda = null, tooltip = null) {
+    const card = document.createElement("div");
+    card.className = "card";
+    if (corBorda) card.style.borderLeftColor = corBorda;
+    if (tooltip) card.title = tooltip;
 
-    if (!capital || !prazo || capital <= 0) {
-        alert("Por favor, preencha os valores de Capital e Prazo corretamente.");
-        return;
-    }
+    const span = document.createElement("span");
+    span.textContent = titulo;
 
-    // --- 1. IMPOSTO DE SELO SOBRE O CAPITAL (Verba 17.1 TGIS Portugal) ---
-    let isCapital = 0;
-    if (aplicarIS) {
-        if (prazo < 12) {
-            isCapital = capital * (0.0008 * prazo); // 0,08% por cada mês ou fração
-        } else if (prazo >= 12 && prazo < 60) {
-            isCapital = capital * 0.0050; // 0,50% fixo
-        } else {
-            isCapital = capital * 0.0060; // 0,60% fixo
-        }
-    }
+    const divValor = document.createElement("div");
+    divValor.className = "valor";
+    divValor.textContent = valor;
 
-    const taxaMensal = taxaAnual / 12;
-    const prestacaoBaseFixa = Math.abs(pmt(taxaMensal, prazo, capital));
-
-    let saldo = capital;
-    let totalJuros = 0;
-    let totalISJuros = 0;
-    let totalPago = isCapital; // Começa com o imposto inicial pago à cabeça
-    let impostoPrimeiraPrestacao = 0;
-
-    const tbody = document.querySelector("#tabela tbody");
-    tbody.innerHTML = "";
-
-    for (let i = 1; i <= prazo; i++) {
-        const juros = saldo * taxaMensal;
-        let amort = (i === prazo) ? saldo : (prestacaoBaseFixa - juros);
-        let impostoJuros = aplicarIS ? (juros * 0.04) : 0; // Verba 17.2.1
-        
-        let prestacaoMesBase = (i === prazo) ? (juros + amort) : prestacaoBaseFixa;
-        let prestacaoMesTotal = prestacaoMesBase + impostoJuros;
-        
-        let saldoFinal = (i === prazo) ? 0 : (saldo - amort);
-
-        if (i === 1) impostoPrimeiraPrestacao = impostoJuros;
-
-        totalJuros += juros;
-        totalISJuros += impostoJuros;
-        totalPago += prestacaoMesTotal;
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${i}</td>
-            <td>${addMonths(dataInicio, i - 1).toLocaleDateString("pt-PT")}</td>
-            <td>${fmt(saldo)} €</td>
-            <td>${fmt(juros)} €</td>
-            <td>${fmt(amort)} €</td>
-            <td>${fmt(impostoJuros)} €</td>
-            <td>${fmt(saldoFinal)} €</td>
-            <td>${fmt(prestacaoMesTotal)} €</td>
-        `;
-        tbody.appendChild(tr);
-
-        saldo = saldoFinal;
-    }
-
-    /* ATUALIZAR INTERFACE DE RESUMO */
-    document.getElementById("resumoLinha1").innerHTML = `
-        <div class="card">
-            <span>Prestação Mensal (Base)</span>
-            <div class="valor">${fmt(prestacaoBaseFixa)} €</div>
-        </div>
-        <div class="card" title="Pago no ato da contratação">
-            <span>IS sobre Capital (17.1)</span>
-            <div class="valor">${fmt(isCapital)} €</div>
-        </div>
-        <div class="card">
-            <span>Prestação Total (1º Mês)</span>
-            <div class="valor">${fmt(prestacaoBaseFixa + impostoPrimeiraPrestacao)} €</div>
-        </div>
-    `;
-
-    document.getElementById("resumoLinha2").innerHTML = `
-        <div class="card">
-            <span>Total Juros</span>
-            <div class="valor">${fmt(totalJuros)} €</div>
-        </div>
-        <div class="card">
-            <span>Total Impostos Selo</span>
-            <div class="valor">${fmt(totalISJuros + isCapital)} €</div>
-        </div>
-        <div class="card" style="border-left-color: #28a745;">
-            <span>MTIC (Custo Total)</span>
-            <div class="valor">${fmt(totalPago)} €</div>
-        </div>
-    `;
+    card.appendChild(span);
+    card.appendChild(divValor);
+    return card;
 }
 
-// Inicializar com data de hoje
-document.getElementById('dataInicio').valueAsDate = new Date();
-// Executar cálculo inicial
-calcular();
+function calcular() {
+    try {
+        const capital = parseFloat(document.getElementById("capital").value);
+        const taxaAnual = parseFloat(document.getElementById("taxa").value) / 100;
+        const prazo = parseInt(document.getElementById("prazo").value, 10);
+        const aplicarIS = document.getElementById("is").checked;
+        
+        const inputData = document.getElementById("dataInicio").value;
+        // Fix de fuso horário UTC: Adiciona T00:00:00 para forçar hora local
+        const dataInicio = inputData ? new Date(inputData + "T00:00:00") : new Date();
+
+        // Validação estrita de limites
+        if (isNaN(capital) || capital < CONFIG.MIN_CAPITAL || capital > CONFIG.MAX_CAPITAL) {
+            alert(`Por favor, insira um montante de Capital válido (entre ${fmt(CONFIG.MIN_CAPITAL)} € e ${fmt(CONFIG.MAX_CAPITAL)} €).`);
+            return;
+        }
+
+        if (isNaN(prazo) || prazo < CONFIG.MIN_PRAZO || prazo > CONFIG.MAX_PRAZO) {
+            alert(`Por favor, insira um Prazo válido (entre ${CONFIG.MIN_PRAZO} e ${CONFIG.MAX_PRAZO} meses).`);
+            return;
+        }
+
+        // 1. Imposto de Selo sobre o Capital (Verba 17.1 TGIS)
+        let isCapital = 0;
+        if (aplicarIS) {
+            if (prazo < 12) {
+                isCapital = roundHalfEven(capital * (CONFIG.IS_CAPITAL_SHORT * prazo));
+            } else if (prazo < 60) {
+                isCapital = roundHalfEven(capital * CONFIG.IS_CAPITAL_MEDIUM);
+            } else {
+                isCapital = roundHalfEven(capital * CONFIG.IS_CAPITAL_LONG);
+            }
+        }
+
+        const taxaMensal = taxaAnual / 12;
+        const prestacaoBaseFixa = roundHalfEven(Math.abs(pmt(taxaMensal, prazo, capital)));
+
+        let saldo = capital;
+        let totalJuros = 0;
+        let totalISJuros = 0;
+        let totalPago = isCapital; 
+        let impostoPrimeiraPrestacao = 0;
+
+        const tbody = document.querySelector("#tabela tbody");
+        tbody.innerHTML = "";
+
+        // Fragmento em memória para otimização do DOM (1 único Reflow/Repaint)
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 1; i <= prazo; i++) {
+            const juros = roundHalfEven(saldo * taxaMensal);
+            let amort = (i === prazo) ? roundHalfEven(saldo) : roundHalfEven(prestacaoBaseFixa - juros);
+            let impostoJuros = aplicarIS ? roundHalfEven(juros * CONFIG.TAX_IS_INTEREST) : 0;
+            
+            let prestacaoMesBase = (i === prazo) ? roundHalfEven(juros + amort) : prestacaoBaseFixa;
+            let prestacaoMesTotal = roundHalfEven(prestacaoMesBase + impostoJuros);
+            
+            let saldoFinal = (i === prazo) ? 0 : roundHalfEven(saldo - amort);
+
+            if (i === 1) impostoPrimeiraPrestacao = impostoJuros;
+
+            totalJuros = roundHalfEven(totalJuros + juros);
+            totalISJuros = roundHalfEven(totalISJuros + impostoJuros);
+            totalPago = roundHalfEven(totalPago + prestacaoMesTotal);
+
+            const tr = document.createElement("tr");
+
+            const tdPer = document.createElement("td");
+            tdPer.textContent = i;
+
+            const tdData = document.createElement("td");
+            tdData.textContent = addMonths(dataInicio, i - 1).toLocaleDateString("pt-PT");
+
+            const tdSaldoInicial = document.createElement("td");
+            tdSaldoInicial.textContent = `${fmt(saldo)} €`;
+
+            const tdJuros = document.createElement("td");
+            tdJuros.textContent = `${fmt(juros)} €`;
+
+            const tdAmort = document.createElement("td");
+            tdAmort.textContent = `${fmt(amort)} €`;
+
+            const tdIS = document.createElement("td");
+            tdIS.textContent = `${fmt(impostoJuros)} €`;
+
+            const tdSaldoFinal = document.createElement("td");
+            tdSaldoFinal.textContent = `${fmt(saldoFinal)} €`;
+
+            const tdPrestTotal = document.createElement("td");
+            tdPrestTotal.textContent = `${fmt(prestacaoMesTotal)} €`;
+
+            tr.appendChild(tdPer);
+            tr.appendChild(tdData);
+            tr.appendChild(tdSaldoInicial);
+            tr.appendChild(tdJuros);
+            tr.appendChild(tdAmort);
+            tr.appendChild(tdIS);
+            tr.appendChild(tdSaldoFinal);
+            tr.appendChild(tdPrestTotal);
+
+            fragment.appendChild(tr);
+            saldo = saldoFinal;
+        }
+
+        tbody.appendChild(fragment);
+
+        // Atualização de Resumos via DOM Seguro (Anti-XSS)
+        const r1 = document.getElementById("resumoLinha1");
+        const r2 = document.getElementById("resumoLinha2");
+        r1.innerHTML = "";
+        r2.innerHTML = "";
+
+        r1.appendChild(criarCardResumo("Prestação Mensal (Base)", `${fmt(prestacaoBaseFixa)} €`));
+        r1.appendChild(criarCardResumo("IS sobre Capital (17.1)", `${fmt(isCapital)} €`, null, "Pago no ato da contratação"));
+        r1.appendChild(criarCardResumo("Prestação Total (1º Mês)", `${fmt(roundHalfEven(prestacaoBaseFixa + impostoPrimeiraPrestacao))} €`));
+
+        r2.appendChild(criarCardResumo("Total Juros", `${fmt(totalJuros)} €`));
+        r2.appendChild(criarCardResumo("Total Impostos Selo", `${fmt(roundHalfEven(totalISJuros + isCapital))} €`));
+        r2.appendChild(criarCardResumo("MTIC (Custo Total)", `${fmt(totalPago)} €`, "#28a745"));
+
+    } catch (e) {
+        console.error("Erro no cálculo do simulador:", e);
+    }
+}
+
+// Eventos e inicialização com Debounce
+document.addEventListener("DOMContentLoaded", () => {
+    const inputData = document.getElementById('dataInicio');
+    if (inputData && !inputData.value) {
+        inputData.valueAsDate = new Date();
+    }
+
+    let timer;
+    const inputs = ["capital", "taxa", "prazo", "dataInicio", "is"];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", () => {
+                clearTimeout(timer);
+                timer = setTimeout(calcular, 250);
+            });
+        }
+    });
+
+    calcular();
+});
 </script>
-<!-- Cloudflare Web Analytics -->
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
-        data-cf-beacon='{"token": "0dc1371ec59643bfb902deb464cfcb8a"}'>
-</script>
-<!-- End Cloudflare Web Analytics -->
 
 </body>
 </html>
-
