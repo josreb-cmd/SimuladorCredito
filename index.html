@@ -156,29 +156,69 @@
 
         /* ---------- PRINT ---------- */
         @page {
-            size: 210mm 297mm; /* Define explicitamente A4 Vertical */
-            margin: 8mm;
+            size: portrait;
+            margin: 10mm;
         }
 
         @media print {
-            html, body {
-                width: 210mm;
-                height: 297mm;
+            body {
                 background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                /* Reduz ligeiramente a escala global na impressão para não cortar margens */
+                zoom: 82%; 
             }
 
             body * { visibility: hidden; }
             #simulador, #simulador * { visibility: visible; }
-            #simulador { position: absolute; left: 0; top: 0; width: 100%; }
-            .sim-btn-wrapper { display: none !important; }
-            .sim-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: 100% !important; }
+            
+            #simulador { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100% !important; 
+            }
 
-            /* Forçar redimensionamento da tabela para Portrait */
-            .sim-table-wrapper { overflow: visible !important; }
-            table { min-width: 100% !important; width: 100% !important; font-size: 0.7rem !important; }
-            th, td { padding: 4px 2px !important; }
-            .sim-resumo .card { padding: 8px 10px !important; }
-            .sim-resumo .valor { font-size: 0.95rem !important; }
+            .sim-btn-wrapper { display: none !important; }
+            
+            .sim-container { 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                box-shadow: none !important; 
+                max-width: 100% !important; 
+                width: 100% !important;
+            }
+
+            .sim-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 8px !important;
+            }
+
+            .sim-grid input {
+                padding: 4px 6px !important;
+                font-size: 0.85rem !important;
+            }
+
+            .sim-table-wrapper { 
+                overflow: visible !important; 
+                width: 100% !important;
+            }
+
+            /* Remove min-width para forçar a tabela a moldar-se à página */
+            table { 
+                min-width: 0 !important; 
+                width: 100% !important; 
+                table-layout: fixed; 
+                font-size: 0.7rem !important; 
+            }
+
+            th, td { 
+                padding: 4px 2px !important; 
+                word-wrap: break-word;
+            }
+
+            .sim-resumo .card { padding: 6px 10px !important; }
+            .sim-resumo .valor { font-size: 0.9rem !important; }
         }
 
         @media (max-width: 600px) {
@@ -237,14 +277,14 @@
             <table id="tabela">
                 <thead>
                     <tr>
-                        <th scope="col">Período</th>
-                        <th scope="col">Data</th>
-                        <th scope="col">Saldo Inicial</th>
-                        <th scope="col">Juros</th>
-                        <th scope="col">Amortização</th>
-                        <th scope="col">Imp. Selo</th>
-                        <th scope="col">Saldo Final</th>
-                        <th scope="col">Prestação Total</th>
+                        <th scope="col" style="width: 7%;">Per.</th>
+                        <th scope="col" style="width: 11%;">Data</th>
+                        <th scope="col" style="width: 14%;">Saldo Inic.</th>
+                        <th scope="col" style="width: 12%;">Juros</th>
+                        <th scope="col" style="width: 14%;">Amort.</th>
+                        <th scope="col" style="width: 12%;">Imp. Selo</th>
+                        <th scope="col" style="width: 14%;">Saldo Fin.</th>
+                        <th scope="col" style="width: 16%;">Prest. Total</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
