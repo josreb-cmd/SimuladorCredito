@@ -155,19 +155,30 @@
         }
 
         /* ---------- PRINT ---------- */
+        @page {
+            size: 210mm 297mm; /* Define explicitamente A4 Vertical */
+            margin: 8mm;
+        }
+
         @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                background: #fff !important;
+            }
+
             body * { visibility: hidden; }
             #simulador, #simulador * { visibility: visible; }
             #simulador { position: absolute; left: 0; top: 0; width: 100%; }
-            .sim-btn-wrapper { display: none; }
-            .sim-container { padding: 0; margin: 0; box-shadow: none; max-width: 100%; }
-            @page { size: A4 portrait; margin: 8mm; }
+            .sim-btn-wrapper { display: none !important; }
+            .sim-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: 100% !important; }
 
-            /* Ajustes para a tabela caber na vertical (portrait) */
-            table { min-width: 100% !important; font-size: 0.75rem; }
-            th, td { padding: 5px 4px; }
-            .sim-resumo .card { padding: 8px 12px; }
-            .sim-resumo .valor { font-size: 1rem; }
+            /* Forçar redimensionamento da tabela para Portrait */
+            .sim-table-wrapper { overflow: visible !important; }
+            table { min-width: 100% !important; width: 100% !important; font-size: 0.7rem !important; }
+            th, td { padding: 4px 2px !important; }
+            .sim-resumo .card { padding: 8px 10px !important; }
+            .sim-resumo .valor { font-size: 0.95rem !important; }
         }
 
         @media (max-width: 600px) {
