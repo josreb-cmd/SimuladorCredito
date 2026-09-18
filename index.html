@@ -160,7 +160,14 @@
             #simulador, #simulador * { visibility: visible; }
             #simulador { position: absolute; left: 0; top: 0; width: 100%; }
             .sim-btn-wrapper { display: none; }
-            @page { size: A4 landscape; margin: 10mm; }
+            .sim-container { padding: 0; margin: 0; box-shadow: none; max-width: 100%; }
+            @page { size: A4 portrait; margin: 8mm; }
+
+            /* Ajustes para a tabela caber na vertical (portrait) */
+            table { min-width: 100% !important; font-size: 0.75rem; }
+            th, td { padding: 5px 4px; }
+            .sim-resumo .card { padding: 8px 12px; }
+            .sim-resumo .valor { font-size: 1rem; }
         }
 
         @media (max-width: 600px) {
@@ -336,7 +343,6 @@ function calcular() {
         const inputData = document.getElementById("dataInicio").value;
         const dataInicio = inputData ? new Date(inputData + "T00:00:00") : new Date();
 
-        // Validação silenciosa sem alertas em popup (sem alert)
         if (isNaN(capital) || capital < CONFIG.MIN_CAPITAL || capital > CONFIG.MAX_CAPITAL) {
             capitalInput.reportValidity();
             return;
@@ -377,7 +383,6 @@ function calcular() {
             let juros = roundHalfEven(saldo * taxaMensal);
             let amort = roundHalfEven(prestacaoBaseFixa - juros);
             
-            // Ajuste estrito do último mês para liquidação exata do capital restante
             if (i === prazo) {
                 amort = roundHalfEven(saldo);
             }
