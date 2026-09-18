@@ -130,7 +130,7 @@
 
         th, td {
             border: 1px solid #d8dfea;
-            padding: 10px;
+            padding: 10px 6px;
             text-align: right;
             font-size: 0.9rem;
         }
@@ -157,7 +157,7 @@
         /* ---------- PRINT ---------- */
         @page {
             size: portrait;
-            margin: 10mm;
+            margin: 8mm;
         }
 
         @media print {
@@ -165,8 +165,7 @@
                 background: #fff !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                /* Reduz ligeiramente a escala global na impressão para não cortar margens */
-                zoom: 82%; 
+                zoom: 85%;
             }
 
             body * { visibility: hidden; }
@@ -204,16 +203,15 @@
                 width: 100% !important;
             }
 
-            /* Remove min-width para forçar a tabela a moldar-se à página */
             table { 
                 min-width: 0 !important; 
                 width: 100% !important; 
                 table-layout: fixed; 
-                font-size: 0.7rem !important; 
+                font-size: 0.72rem !important; 
             }
 
             th, td { 
-                padding: 4px 2px !important; 
+                padding: 5px 2px !important; 
                 word-wrap: break-word;
             }
 
@@ -277,14 +275,15 @@
             <table id="tabela">
                 <thead>
                     <tr>
-                        <th scope="col" style="width: 7%;">Per.</th>
-                        <th scope="col" style="width: 11%;">Data</th>
-                        <th scope="col" style="width: 14%;">Saldo Inic.</th>
+                        <!-- Distribuição otimizada das larguras das colunas -->
+                        <th scope="col" style="width: 5%;">Nº</th>
+                        <th scope="col" style="width: 10%;">Data</th>
+                        <th scope="col" style="width: 15%;">Saldo Inicial</th>
                         <th scope="col" style="width: 12%;">Juros</th>
-                        <th scope="col" style="width: 14%;">Amort.</th>
-                        <th scope="col" style="width: 12%;">Imp. Selo</th>
-                        <th scope="col" style="width: 14%;">Saldo Fin.</th>
-                        <th scope="col" style="width: 16%;">Prest. Total</th>
+                        <th scope="col" style="width: 14%;">Amortização</th>
+                        <th scope="col" style="width: 11%;">Imp. Selo</th>
+                        <th scope="col" style="width: 15%;">Saldo Final</th>
+                        <th scope="col" style="width: 18%;">Prestação Total</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
