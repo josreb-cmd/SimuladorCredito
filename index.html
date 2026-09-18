@@ -4,39 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Crédito Profissional</title>
+    <!-- Biblioteca para geração direta e perfeita de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ---------- CONTAINER ---------- */
         .sim-container {
-            max-width: 1100px;
-            margin: 40px auto;
+            max-width: 1000px;
+            margin: 20px auto;
             background: #ffffff;
-            padding: 35px;
+            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-            font-family: sans-serif;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
         }
 
         /* ---------- TITULOS ---------- */
         .sim-title {
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: #1a2a6c;
             margin-bottom: 5px;
             text-align: center;
         }
 
         .sim-subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #3a4a7a;
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         /* ---------- GRID ---------- */
         .sim-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 18px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .sim-grid div {
@@ -47,34 +50,37 @@
         .sim-grid label {
             font-weight: bold;
             margin-bottom: 5px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #444;
         }
 
         .sim-grid input {
-            padding: 10px 12px;
+            padding: 8px 10px;
             border: 1px solid #cfd6e4;
             border-radius: 6px;
-            font-size: 1em;
+            font-size: 0.95em;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         /* ---------- BOTÃO ---------- */
         .sim-btn-wrapper {
             display: flex;
             gap: 10px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .sim-btn {
             flex: 1;
-            padding: 14px;
+            padding: 12px;
             background: linear-gradient(135deg, #1a2a6c, #1a73e8);
             color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: 0.2s;
+            font-weight: bold;
         }
 
         .sim-btn.secondary {
@@ -89,27 +95,28 @@
         .sim-resumo {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         .sim-resumo .card {
             background: #f0f4ff;
-            padding: 14px 20px;
+            padding: 12px 15px;
             border-radius: 8px;
-            min-width: 200px;
+            min-width: 180px;
             border-left: 4px solid #1a73e8;
             flex: 1;
+            box-sizing: border-box;
         }
 
         .sim-resumo .card span {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #555;
             display: block;
         }
 
         .sim-resumo .valor {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             margin-top: 4px;
             color: #1a2a6c;
@@ -119,20 +126,21 @@
         .sim-table-wrapper {
             width: 100%;
             overflow-x: auto;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            table-layout: fixed;
         }
 
         th, td {
             border: 1px solid #d8dfea;
-            padding: 10px 6px;
+            padding: 8px 4px;
             text-align: right;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            word-wrap: break-word;
         }
 
         th {
@@ -148,87 +156,24 @@
 
         /* ---------- NOTA ---------- */
         .sim-nota {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #666;
             margin-top: 15px;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
-        /* ---------- PRINT ---------- */
-        @page {
-            size: portrait;
-            margin: 8mm;
-        }
-
+        /* ---------- ESTILOS DE IMPRESSÃO / PDF ---------- */
         @media print {
-            body {
-                background: #fff !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                zoom: 85%;
-            }
-
-            body * { visibility: hidden; }
-            #simulador, #simulador * { visibility: visible; }
-            
-            #simulador { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100% !important; 
-            }
-
             .sim-btn-wrapper { display: none !important; }
-            
-            .sim-container { 
-                padding: 0 !important; 
-                margin: 0 !important; 
-                box-shadow: none !important; 
-                max-width: 100% !important; 
-                width: 100% !important;
-            }
-
-            .sim-grid {
-                grid-template-columns: repeat(4, 1fr) !important;
-                gap: 8px !important;
-            }
-
-            .sim-grid input {
-                padding: 4px 6px !important;
-                font-size: 0.85rem !important;
-            }
-
-            .sim-table-wrapper { 
-                overflow: visible !important; 
-                width: 100% !important;
-            }
-
-            table { 
-                min-width: 0 !important; 
-                width: 100% !important; 
-                table-layout: fixed; 
-                font-size: 0.72rem !important; 
-            }
-
-            th, td { 
-                padding: 5px 2px !important; 
-                word-wrap: break-word;
-            }
-
-            .sim-resumo .card { padding: 6px 10px !important; }
-            .sim-resumo .valor { font-size: 0.9rem !important; }
-        }
-
-        @media (max-width: 600px) {
-            .sim-grid { grid-template-columns: 1fr; }
-            .sim-resumo .card { min-width: 100%; }
+            body { background: #fff; margin: 0; }
+            .sim-container { box-shadow: none; padding: 0; margin: 0; max-width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <section id="simulador" role="region" aria-label="Simulador de Crédito">
-    <div class="sim-container">
+    <div class="sim-container" id="conteudo-pdf">
         <h1 class="sim-title">Simulador de Crédito</h1>
         <p class="sim-subtitle">Cálculo de Prestação & Plano de Amortização (TGIS Portugal)</p>
 
@@ -249,13 +194,13 @@
                 <label for="dataInicio">Data de Início</label>
                 <input type="date" id="dataInicio" aria-label="Data de Início do Crédito">
             </div>
-            <div style="flex-direction: row; align-items: center; gap: 10px; padding-top: 25px;">
-                <input type="checkbox" id="is" checked style="width: 20px; height: 20px;" aria-label="Aplicar Imposto de Selo de Portugal">
+            <div style="flex-direction: row; align-items: center; gap: 8px; padding-top: 20px;">
+                <input type="checkbox" id="is" checked style="width: 18px; height: 18px;" aria-label="Aplicar Imposto de Selo de Portugal">
                 <label for="is" style="margin: 0;">Aplicar Imposto Selo (Portugal)</label>
             </div>
         </div>
 
-        <div class="sim-btn-wrapper">
+        <div class="sim-btn-wrapper" data-html2canvas-ignore="true">
             <button type="button" class="sim-btn" id="btnCalcular" onclick="calcular()">Calcular</button>
             <button type="button" class="sim-btn secondary" onclick="gerarPDF()">Gerar PDF</button>
         </div>
@@ -269,21 +214,20 @@
             • <b>MTIC:</b> Montante Total Imputado ao Consumidor (Soma de Capital, Juros e Impostos).
         </div>
 
-        <h2 class="sim-subtitle" style="margin-top:40px; text-align: left; border-bottom: 2px solid #eee; padding-bottom: 10px;">Plano de Amortização</h2>
+        <h2 class="sim-subtitle" style="margin-top:30px; text-align: left; border-bottom: 2px solid #eee; padding-bottom: 8px;">Plano de Amortização</h2>
 
         <div class="sim-table-wrapper" tabindex="0" role="region" aria-label="Tabela do Plano de Amortização">
             <table id="tabela">
                 <thead>
                     <tr>
-                        <!-- Distribuição otimizada das larguras das colunas -->
-                        <th scope="col" style="width: 5%;">Nº</th>
-                        <th scope="col" style="width: 10%;">Data</th>
-                        <th scope="col" style="width: 15%;">Saldo Inicial</th>
+                        <th scope="col" style="width: 6%;">Nº</th>
+                        <th scope="col" style="width: 12%;">Data</th>
+                        <th scope="col" style="width: 15%;">Saldo Inic.</th>
                         <th scope="col" style="width: 12%;">Juros</th>
-                        <th scope="col" style="width: 14%;">Amortização</th>
+                        <th scope="col" style="width: 14%;">Amortiz.</th>
                         <th scope="col" style="width: 11%;">Imp. Selo</th>
-                        <th scope="col" style="width: 15%;">Saldo Final</th>
-                        <th scope="col" style="width: 18%;">Prestação Total</th>
+                        <th scope="col" style="width: 15%;">Saldo Fin.</th>
+                        <th scope="col" style="width: 15%;">Prest. Total</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -293,23 +237,17 @@
 </section>
 
 <script>
-/**
- * CONSTANTES LEGAIS E LIMITES FINANCEIROS
- */
 const CONFIG = {
-    TAX_IS_INTEREST: 0.04,        // Verba 17.2.1 (4% sobre juros)
-    IS_CAPITAL_SHORT: 0.0008,     // Verba 17.1 (< 12 meses)
-    IS_CAPITAL_MEDIUM: 0.0050,    // Verba 17.1 (12 a 59 meses)
-    IS_CAPITAL_LONG: 0.0060,      // Verba 17.1 (>= 60 meses)
+    TAX_IS_INTEREST: 0.04,
+    IS_CAPITAL_SHORT: 0.0008,
+    IS_CAPITAL_MEDIUM: 0.0050,
+    IS_CAPITAL_LONG: 0.0060,
     MIN_CAPITAL: 100,
     MAX_CAPITAL: 10000000,
     MIN_PRAZO: 1,
     MAX_PRAZO: 600
 };
 
-/**
- * Formatador oficial de Moeda pt-PT
- */
 const formatter = new Intl.NumberFormat("pt-PT", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -317,9 +255,6 @@ const formatter = new Intl.NumberFormat("pt-PT", {
 
 const fmt = v => isNaN(v) ? "0,00" : formatter.format(v);
 
-/**
- * Arredondamento Bancário (Half-Even / ISO 60559)
- */
 function roundHalfEven(num, decimals = 2) {
     const factor = Math.pow(10, decimals);
     const n = +(num * factor).toFixed(8);
@@ -336,9 +271,6 @@ function roundHalfEven(num, decimals = 2) {
     return r / factor;
 }
 
-/**
- * Adiciona meses evitando overflow de calendário
- */
 const addMonths = (date, m) => {
     const d = new Date(date.getTime());
     const day = d.getDate();
@@ -347,21 +279,28 @@ const addMonths = (date, m) => {
     return d;
 };
 
-/**
- * Função Financeira PMT (Prestação Constante)
- */
 const pmt = (rate, nper, pv) => {
     if (rate === 0) return -(pv / nper);
     return -(rate * pv * Math.pow(1 + rate, nper)) / (Math.pow(1 + rate, nper) - 1);
 };
 
+/* FUNÇÃO DEFINITIVA DE GERAÇÃO DE PDF */
 function gerarPDF() {
-    window.print();
+    const elemento = document.getElementById("conteudo-pdf");
+    
+    // Opções de configuração estritas para A4 Portrait sem cortes
+    const opt = {
+        margin:       [8, 8, 8, 8], // Margens de 8mm em toda a volta
+        filename:     'Simulacao_Credito.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Gera e faz download diretamente do PDF
+    html2pdf().set(opt).from(elemento).save();
 }
 
-/**
- * Helper para criação segura de Cards de Resumo (Anti-XSS)
- */
 function criarCardResumo(titulo, valor, corBorda = null, tooltip = null) {
     const card = document.createElement("div");
     card.className = "card";
@@ -403,7 +342,6 @@ function calcular() {
             return;
         }
 
-        // 1. Imposto de Selo sobre o Capital (Verba 17.1 TGIS)
         let isCapital = 0;
         if (aplicarIS) {
             if (prazo < 12) {
@@ -490,7 +428,6 @@ function calcular() {
 
         tbody.appendChild(fragment);
 
-        /* ATUALIZAÇÃO DOS CARDS DE RESUMO */
         const r1 = document.getElementById("resumoLinha1");
         const r2 = document.getElementById("resumoLinha2");
         r1.innerHTML = "";
@@ -509,7 +446,6 @@ function calcular() {
     }
 }
 
-// Inicialização com Debounce
 document.addEventListener("DOMContentLoaded", () => {
     const inputData = document.getElementById('dataInicio');
     if (inputData && !inputData.value) {
